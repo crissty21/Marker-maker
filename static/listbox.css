@@ -27,20 +27,6 @@
     margin-top: 1em;
   }
   
-  [role="group"] {
-    margin: 0;
-    padding: 0;
-  }
-  
-  [role="group"] > [role="presentation"] {
-    display: block;
-    margin: 0;
-    padding: 0 0.5em;
-    font-weight: bold;
-    line-height: 2;
-    background-color: #ccc;
-  }
-  
   [role="option"] {
     position: relative;
     display: block;
@@ -50,107 +36,10 @@
     cursor: pointer;
   }
   
-  [role="listbox"]:focus [role="option"].focused {
-    background: #bde4ff;
-  }
+ 
   
   [role="listbox"]:focus [role="option"].focused,
   [role="option"]:hover {
     outline: 2px solid currentcolor;
   }
   
-  .move-right-btn span.checkmark::after {
-    content: " →";
-  }
-  
-  .move-left-btn span.checkmark::before {
-    content: "← ";
-  }
-  
-  [role="option"][aria-selected="true"] span.checkmark::before {
-    position: absolute;
-    left: 0.5em;
-    content: "✓";
-  }
-  
-  button[aria-haspopup="listbox"] {
-    position: relative;
-    padding: 5px 10px;
-    width: 150px;
-    border-radius: 0;
-    text-align: left;
-  }
-  
-  button[aria-haspopup="listbox"]::after {
-    position: absolute;
-    right: 5px;
-    top: 10px;
-    width: 0;
-    height: 0;
-    border: 8px solid transparent;
-    border-top-color: currentcolor;
-    border-bottom: 0;
-    content: "";
-  }
-  
-  button[aria-haspopup="listbox"][aria-expanded="true"]::after {
-    position: absolute;
-    right: 5px;
-    top: 10px;
-    width: 0;
-    height: 0;
-    border: 8px solid transparent;
-    border-top: 0;
-    border-bottom-color: currentcolor;
-    content: "";
-  }
-  
-  button[aria-haspopup="listbox"] + [role="listbox"] {
-    position: absolute;
-    margin: 0;
-    width: 9.5em;
-    max-height: 10em;
-    border-top: 0;
-    overflow-y: auto;
-  }
-  
-  [role="toolbar"] {
-    display: flex;
-  }
-  
-  [role="toolbar"] > * {
-    border: 1px solid #aaa;
-    background: #ccc;
-  }
-  
-  [role="toolbar"] > [aria-disabled="false"]:focus {
-    background-color: #eee;
-  }
-  
-  button {
-    font-size: inherit;
-  }
-  
-  button[aria-disabled="true"] {
-    opacity: 0.5;
-  }
-  
-  .annotate {
-    color: #366ed4;
-    font-style: italic;
-  }
-  
-  .hidden {
-    display: none;
-  }
-  
-  .offscreen {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(1px 1px 1px 1px);
-    clip: rect(1px, 1px, 1px, 1px);
-    font-size: 14px;
-    white-space: nowrap;
-  }
