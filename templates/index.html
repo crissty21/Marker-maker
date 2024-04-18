@@ -1,140 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video.js | HTML5 Video Player</title>
-
+    <title>Video Player</title>
     <link href="http://vjs.zencdn.net/4.12/video-js.css" rel="stylesheet">
-    <script src="http://vjs.zencdn.net/4.12/video.js"></script>
-    <!--
-        the strange src url is because of the flask server
-    -->
-    <link href="{{url_for('static', filename='snapshot/videojs-snapshot.css')}} " rel="stylesheet" type="text/css" />
-    <script src="{{url_for('static', filename='/snapshot/videojs-snapshot.js')}} "></script>
-    <script src="{{url_for('static', filename='gif.worker.js')}} "></script>
-    <script src="{{url_for('static', filename='gif.worker.js.map')}} "></script>
-    <script src="{{url_for('static', filename='./noUiSlider-15.7.1/nouislider.js')}}"></script>
-    <link rel="stylesheet" href="{{url_for('static', filename='./noUiSlider-15.7.1/nouislider.css')}}">
-    <script src="{{url_for('static', filename='gif.js')}}"></script>
-
+    <link href="{{url_for('static', filename='snapshot/videojs-snapshot.css')}}" rel="stylesheet" type="text/css">
     <link href="{{url_for('static', filename='styles.css')}}" rel="stylesheet">
-
+    <link href="{{url_for('static', filename='listbox.css')}}" rel="stylesheet">
 </head>
 
 <body>
-    <div id="loadingOverlay">
-        <div class="progress-container">
-            <progress id="progressBar" value="0" max="100"></progress>
-            <p id="progressBarText">Creating GIF, please wait...</p>
+    <div class="video-container">
+        <div class="video-background">
+            <video id="left-video" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto"
+                width="100%" height="100%">
+                <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web
+                    browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5
+                        video</a></p>
+            </video>
+        </div>
+        <div class="video-background">
+            <video id="right-video" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto"
+                width="100%" height="100%">
+                <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web
+                    browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5
+                        video</a></p>
+            </video>
         </div>
     </div>
+    <div style="display: flex;">
 
-    <div id="video-background">
-        <video id="my-video" class="video-js vjs-default-skin vjs-big-play-centered" controls="controls" preload="auto"
-            width="100%" height="100%">
-            <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web
-                browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5
-                    video</a></p>
-        </video>
-    </div>
-
-    <div id="properties">
-        <div id="gif-selector">
-            <div class="frame-container">
-                <span class="example-val">
-                    Start frame number: <input type="number" id="formatting-start">
-                </span>
-                <span style="margin-right: 10px;margin-left: 10px;">-</span>
-                <span class="example-val">
-                    End frame number: <input type="number" id="formatting-end">
-                </span>
-            </div>
-            <div id="slider" style="margin-top: 50px;"></div>
-        </div>
-        <div style="display: flex;">
-            <div>
-                <label for="quality">Quality: </label>
-                <input type="number" id="quality" min="1" max="30">
-                <span class="tooltip-container">
-                    <span class="tooltip question-mark" id="tooltip-1">?</span>
-                    <span class="tooltip-text" id="tooltip-1-text">1 = best quality and slowest creation speed</span>
-                </span>
-                <br>
-
-                <label for="delay">Delay (frames): </label>
-                <input type="number" id="delay" min="1">
-                <br>
-
-                <label for="resolution">GIF Resolution: </label>
-                <input type="number" id="resolutionWidth" min="100" placeholder="Width">
-                <input type="number" id="resolutionHeight" min="100" placeholder="Height">
-                <button id="resetButton">&#8634;</button>
-            </div>
-            <div style="display: flex; flex-direction: column; margin-left: 20px;">
-                <div id="extractButtonContainer" style="display: none;">
-                    <button class="blue-button buttons-controls" id="extractButton">Extract GIF</button>
-                    <button class="blue-button buttons-controls" id="cancelButton">Cancel</button>
+        <div class="button-container" style="flex:1;">
+            <div style="display: flex;">
+                <div>
+                    <p>Skip frames</p>
+                    <div class="button-group">
+                        <button class="blue-button" onclick="forwardFrames(-1)">&larr;</button>
+                        <input id="current-step" type="number" min="1" value="1">
+                        <button class="blue-button" onclick="forwardFrames(1)">&rarr;</button>
+                    </div>
                 </div>
-                <button id="downloadButton" class="blue-button" style="margin-top: 5px;">Download GIF</button>
+                <div style="height: 100%;margin-top: auto; margin-bottom: 5px;">
+                    <button id="toggleButton" class="blue-button" onclick="toggleLock()">Left</button>
+                </div>
+                <div>
+                    <p>Skip seconds</p>
+                    <div class="button-group">
+                        <button class="blue-button" onclick="forwardSeconds(-1)">&larr;</button>
+                        <input id="current-seconds" type="number" min="1" value="1">
+                        <button class="blue-button" onclick="forwardSeconds(1)">&rarr;</button>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <button id="syncButton" class="blue-button" onclick="syncVideos()">Syncronize Videos</button>
+                <button id="deleteMarkerButton" class="blue-button" onclick="deleteMarker()">Delete Marker</button>
+                <button id="goDetButton" class="blue-button" onclick="openDetaliedWindow()">Open Detalied Edit</button>
             </div>
         </div>
+        <div class="button-container" style="flex: 1;">
+            <div>
+                <ul id="ss_elem_list" tabindex="0" role="listbox" aria-labelledby="ss_elem" style="margin-bottom: 10px;">
+                  
+                </ul>
 
-    </div>
-    <div class="button-container" style="display: flex; align-items: center;" id="second-div">
-
-        <div>
-            <p>Skip frames</p>
-            <div style="display: flex; justify-content: space-between;">
-                <button class="blue-button buttons-controls" onclick="forwardFrames(-1)">&larr;</button>
-                <input id="current-step" type="number" min="1" value="1"
-                    style="margin-left: 5px; margin-right: 5px; text-align: center;">
-                <button class="blue-button buttons-controls" onclick="forwardFrames(1)">&rarr;</button>
             </div>
         </div>
-        <div style=" margin-left: 20px; margin-right: 20px; text-align: center;">
-            <p style="margin-bottom: 10px;">Quick comands</p>
-            <label class="switch">
-                <input type="checkbox" checked id="switchSeconds">
-                <span class="tooltip slider round" id="tooltip-2"></span>
-                <span class="tooltip-container">
-                    <span class="tooltip-text" id="tooltip-2-text">key-shortcut: S</span>
-                </span>
-            </label>
-        </div>
-
-        <div>
-            <p>Skip seconds</p>
-            <div style="display: flex; justify-content: space-between;">
-                <button class="blue-button buttons-controls" onclick="forwardSeconds(-1)">&larr;</button>
-                <input id="current-seconds" type="number" min="1" value="1"
-                    style="margin-left: 5px; margin-right: 5px; text-align: center;">
-                <button class="blue-button buttons-controls" onclick="forwardSeconds(1)">&rarr;</button>
-            </div>
-        </div>
-
-        <div>
-            <button class="blue-button buttons-controls" id="exportButton">Export as GIF</button>
-        </div>
     </div>
-    <div class="button-container" id="third-div" style="display: flex;">
-        <div>
-            <p>Choose mp4 file:</p>
-            <input type="file" id="files" name="files[]" accept="video/mp4" />
-        </div>
-        <div>
-            <p>Videos folder options:</p>
-            <select id="videoDropdown" style="width: auto;"></select>
-        </div>
-    </div>
-    </div>
-    
-
-    
+    <script src="http://vjs.zencdn.net/4.12/video.js"></script>
+    <script src="{{url_for('static', filename='/snapshot/videojs-snapshot.js')}}"></script>
     <script src="{{url_for('static', filename='video-playback-controlls.js')}}"></script>
-    <script src="{{url_for('static', filename='calculatefps.js')}}"></script>
-    <script src="{{url_for('static', filename='gifexport.js')}}"></script>
+    <script src="{{url_for('static', filename='getfps.js')}}"></script>
+    <script src="{{url_for('static', filename='listbox.js')}}"></script>
+    </div>
+
+
 </body>
 
 </html>

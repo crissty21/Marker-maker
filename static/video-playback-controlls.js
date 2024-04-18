@@ -3,77 +3,40 @@
  * It provides functionality for stepping through frames or seconds, enabling scroll-based interaction,
  * and handling key events for playback control and settings toggling.
  */
-
-var currentHeigth;
-var videoPlayerDim = [0, 0, 0, 0];
-
-var player = videojs('my-video');
+var videoPlayers = {
+    "left": videojs('left-video'),
+    "right": videojs('right-video')
+};
 var fps;
-var video = player.el().querySelector('video');
-player.snapshot();
+videoPlayers["left"].snapshot();
+videoPlayers["right"].snapshot();
+var controlledPlayers = ["left"];
 enableDisableControls(true);
-document.getElementById("files").disabled = false;
 var currentStep = 1;
 var currentSeconds = 1;
-var canUseQuickCommands = false;
-const dropdown = document.getElementById('videoDropdown');
-
-// Get the switch element for toggling between updating seconds and steps
-var switchSeconds = document.getElementById("switchSeconds");
+var canUseQuickCommands = true;
 var bUpdateSeconds = true;
 
 
 window.onload = function () {
-    var div1 = document.getElementById('video-background');
-    var div2 = document.getElementById('second-div');
-    var div3 = document.getElementById('third-div');
-
-
-    var height2 = div2.offsetHeight;
-    var viewportHeight = window.innerHeight;
-    var height3 = div3.offsetHeight;
-
-    var height1 = viewportHeight - height2 - height3 - 30;
-    div1.style.height = height1 + 'px';
-    currentHeigth = 0;
-
-    function adjustHeights() {
-        viewportHeight = window.innerHeight;
-        videoPlayerDim[0] = (viewportHeight - height2 - height3 - 30) + 'px';
-        videoPlayerDim[1] = (viewportHeight - height2 - 30) + 'px';
-        videoPlayerDim[2] = (viewportHeight - 30) + 'px';
-        videoPlayerDim[3] = (viewportHeight - 150) + 'px';
-        modifyVideoHeight(currentHeigth)
-    }
-
-    adjustHeights();
-    window.onresize = adjustHeights;
-
-    loadVideo();
+    loadVideos();
 }
 
-function loadVideo() {
-    // get url parameter from link
+function loadVideos() {
+    // Get url parameters from link
     var urlParams = new URLSearchParams(window.location.search);
-    var videoPath = urlParams.get('video');
+    var videoPaths = urlParams.getAll('video');
 
-    if (videoPath) {
-        loadVideoFromPath(videoPath);
+    if (videoPaths.length >= 2) {
+        // Load the first video
+        loadVideoFromPath(videoPaths[0], "left");
+        // Load the second video
+        loadVideoFromPath(videoPaths[1], "right");
     }
 }
 
-fetch('/get-videos')
-    .then(response => response.json())
-    .then(videos => {
-        videos.forEach(video => {
-            const option = document.createElement('option');
-            option.value = video;
-            option.text = video;
-            dropdown.add(option);
-        });
-    });
 
-function loadVideoFromPath(videoPath) {
+function loadVideoFromPath(videoPath, playerId) {
     sendPathToServer(videoPath);
 
     function sendPathToServer(path) {
@@ -83,44 +46,19 @@ function loadVideoFromPath(videoPath) {
 
         // Send the path as JSON data
         xhr.send(JSON.stringify({ path: path }));
-
-        //xhr.onload = function () {
-        //    if (xhr.status === 200) {
-        //        console.log("Path to file sent successfully!");
-        //    } else {
-        //        console.error("Error sending the file path.");
-        //    }
-        //};
-    }//
+    }
 
     fetch('/video')
         .then(response => response.blob())
         .then(video => {
             var url = URL.createObjectURL(video);
-            player.src({ type: "video/mp4", src: url });
+            videoPlayers[playerId].src({ type: "video/mp4", src: url });
         })
-        .catch(error => console.error('An error ocured:', error));
-    // Get the video element and set the source on page load
+        .catch(error => console.error('An error occurred:', error));
 
-    init_calculation();
-    modifyVideoHeight(1);
+    getFPS();
+
 }
-
-function modifyVideoHeight(newHeight) {
-    var videoDiv = document.getElementById("video-background");
-    videoDiv.style.transition = "height 0.8s";
-    videoDiv.style.height = videoPlayerDim[newHeight];
-    currentHeigth = newHeight;
-}
-
-dropdown.addEventListener('change', (event) => {
-    loadVideoFromPath("videos/" + event.target.value)
-});
-
-// Event listener for toggling between updating seconds and steps
-switchSeconds.addEventListener('select', function () {
-    bUpdateSeconds = switchSeconds.checked;
-});
 
 document.getElementById('current-seconds').addEventListener('input', function (e) {
     currentSeconds = parseInt(e.target.value);
@@ -134,10 +72,14 @@ document.getElementById('current-step').addEventListener('input', function (e) {
 
 // Function to forward or backward frames
 function forwardFrames(direction) {
-    player.pause();
-    var currentTime = player.currentTime();
-    var newTime = currentTime + currentStep / fps * direction;
-    player.currentTime(newTime);
+    controlledPlayers.forEach(index => {
+        videoPlayers[index].pause();
+        var currentTime = videoPlayers[index].currentTime();
+        var newTime = currentTime + currentStep / fps * direction;
+        videoPlayers[index].currentTime(newTime);
+    });
+
+
 }
 
 // Function to update the step size
@@ -150,11 +92,15 @@ function updateStep(step) {
 
 // Function to forward or backward seconds
 function forwardSeconds(direction) {
-    player.play();
-    player.pause();
-    var currentTime = player.currentTime();
-    var newTime = currentTime + currentSeconds * direction;
-    player.currentTime(newTime);
+
+    controlledPlayers.forEach(index => {
+        videoPlayers[index].play();
+        videoPlayers[index].pause();
+        var currentTime = videoPlayers[index].currentTime();
+        var newTime = currentTime + currentSeconds * direction;
+        videoPlayers[index].currentTime(newTime);
+    });
+
 }
 
 // Function to update the seconds size
@@ -165,42 +111,44 @@ function updateSeconds(step) {
     }
 }
 
-document.getElementById('files').addEventListener('change', function (event) {
-    var file = event.target.files[0];
-    player.src({ type: "video/mp4", src: URL.createObjectURL(file) });
-
-    // When changing the file init the fps calculation
-    init_calculation();
-    modifyVideoHeight(1);
-}, false);
-
-
 document.addEventListener('keydown', function (event) {
+
     // Play/pause video with spacebar
-    if (canUseQuickCommands) {
-        if (event.key === ' ') {
-            if (player.paused()) {
-                player.play();
-            } else {
-                player.pause();
-            }
+    if (event.key === ' ') {
+        event.preventDefault();
+        if (canUseQuickCommands) {
+            controlledPlayers.forEach(index => {
+                player = videoPlayers[index];
+                if (player.paused()) {
+                    player.play();
+                } else {
+                    player.pause();
+                }
+            });
+
         }
     }
 
     // Toggle fullscreen with 'F' key
     if (event.key === 'f') {
         if (canUseQuickCommands) {
-            if (player.isFullscreen()) {
-                player.exitFullscreen();
-            } else {
-                player.requestFullscreen();
-            }
+            controlledPlayers.forEach(index => {
+                player = videoPlayers[index];
+                if (player.isFullscreen()) {
+                    player.exitFullscreen();
+                } else {
+                    player.requestFullscreen();
+                }
+            });
+
         }
+
     }
 
     // Skip number of frames/seconds with arrow keys
     if (event.code === "ArrowLeft") {
         if (canUseQuickCommands) {
+            
             event.preventDefault();
             if (bUpdateSeconds) {
                 forwardSeconds(-1);
@@ -231,19 +179,12 @@ document.addEventListener('keydown', function (event) {
     }
     // Subtract frames/seconds when down arrow is pressed
     if (event.code === "ArrowDown") {
-
         event.preventDefault();
         if (bUpdateSeconds) {
             updateSeconds(-1);
         } else {
             updateStep(-1);
         }
-    }
-
-    // Toggle between frames and seconds using 's'
-    if (event.key === 's') {
-        bUpdateSeconds = !bUpdateSeconds;
-        switchSeconds.checked = bUpdateSeconds;
     }
 });
 
@@ -252,31 +193,38 @@ function enableDisableControls(value) {
     buttons.forEach(function (button) {
         button.disabled = value;
     });
-    document.getElementById("files").disabled = value;
     canUseQuickCommands = !value;
 }
 
-// Delay opening the tooltip text by 1 second for each question mark
-const questionMarks = document.querySelectorAll('.tooltip');
-const tooltipTimeouts = new Map();
+function toggleLock() {
+    var button = document.getElementById("toggleButton");
+    if (button.textContent === "Left") {
+        button.textContent = "Right";
+        controlledPlayers = ['right'];
+    } else if (button.textContent === "Right") {
+        button.textContent = "🔒";
+        controlledPlayers = ['left', 'right'];
+    }
+    else {
+        button.textContent = "Left";
+        controlledPlayers = ['left'];
+    }
+    console.log(controlledPlayers)
 
-questionMarks.forEach((questionMark, index) => {
+}
 
-    questionMark.addEventListener('mouseenter', () => {
-        tooltipTimeouts.set(index, setTimeout(() => {
-            let id = questionMark.id + "-text";
-            let tooltipText = document.getElementById(id);
-            tooltipText.style.visibility = 'visible';
-            tooltipText.style.opacity = '1';
+function syncVideos(){
+    let timeLeft = videoPlayers['left'].currentTime();
+    let timeRight = videoPlayers['right'].currentTime();
 
-        }, 1000)); // 1000 milliseconds (1 second)
-    });
+    if(timeLeft > timeRight)
+    {
+        videoPlayers['right'].currentTime(timeLeft);
+    }
+    else
+    {
+        videoPlayers['left'].currentTime(timeRight);
 
-    questionMark.addEventListener('mouseleave', () => {
-        clearTimeout(tooltipTimeouts.get(index));
-        let id = questionMark.id + "-text";
-        let tooltipText = document.getElementById(id);
-        tooltipText.style.visibility = 'hidden';
-        tooltipText.style.opacity = '0';
-    });
-});
+    }
+
+}

@@ -14,7 +14,8 @@ function snapshot() {
 	var cropbox, textbox; // Variables for crop box and text box
 	var paint = false; // Flag to indicate if drawing is in progress
 	var startX, startY, currentX, currentY; // Variables for tracking mouse coordinates
-
+	var video = player.el().querySelector('video');
+	
 
 	player.snap = snap;
 
@@ -49,7 +50,7 @@ function snapshot() {
 			alert("Can't take a snapshot while in Gif export Mode!");
 			return;
 		}
-		modifyVideoHeight(2)
+		
 		enableDisableControls(true); // Disable controls
 		player.pause(); 
 		player.el().blur(); 
@@ -617,7 +618,6 @@ function snapshot() {
 
 			// Enable player controls
 			enableDisableControls(false);
-			modifyVideoHeight(1);
 		});
 	}
 
